@@ -34,12 +34,13 @@
                 <td>@item.Name</td>
                 <td>@item.Brand</td>
                 <td>@item.Category</td>
-                <td>@item.Price</td>
+                <td>@item.Price$</td>
                 <td><img src="/products/@item.ImageFileName" alt="@item.Name" width="100" /></td>
                 <td>@item.CreatedAt.ToString("yyyy-MM-dd")</td>
                 <td>
                     <a class="btn btn-sm btn-primary" asp-controller="Products" asp-action="Edit" asp-route-id="@item.Id">Edit</a>
-                    <a class="btn btn-sm btn-danger" asp-controller="Products" asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                    <a class="btn btn-sm btn-danger" asp-controller="Products" asp-action="Delete" 
+                    asp-route-id="@item.Id" onclick="return confirm('Are you Sure?')">Delete</a>
                 </td>
             </tr>
             
