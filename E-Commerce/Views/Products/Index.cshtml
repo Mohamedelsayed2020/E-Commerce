@@ -1,5 +1,11 @@
 ﻿@model List<Product>
 @{
+    int pageIndex = ViewData["PageIndex"] as int? ?? 1;
+    int totalPages = ViewData["TotalPages"] as int? ?? 1;
+
+    string search = ViewData["Search"] as string ?? "";
+    string coulmn = ViewData["Column"] as string ?? "";
+    string orderBy = ViewData["OrderBy"] as string ?? "";
 }
 <h2 class="text-center mb-5">List of products</h2>
 
@@ -8,20 +14,38 @@
         <a class="btn btn-primary" asp-controller="Products" asp-action="Create">New Prodct</a>
     </div>
     <div class="col">
-
+        <form class="d-flex" role="search">
+            <input class="form-control me-2" type="search" name="search" placeholder="Search By Name Or Brand Or Category" aria-label="Search" />
+            <button class="btn btn-outline-success" type="submit">Search</button>
+        </form>
     </div>
 </div>
-
+<script>
+function sortTable(column) {
+    let currentUrl = new URL(window.location.href);
+    let searchParams = currentUrl.searchParams;
+    let currentColumn = searchParams.get("column");
+    let orderBy = searchParams.get("orderBy") || "asc";
+    if (currentColumn === column) {
+        orderBy = orderBy === "asc" ? "desc" : "asc";
+    } else {
+        orderBy = "asc";
+    }
+    searchParams.set("column", column);
+    searchParams.set("orderBy", orderBy);
+    window.location.href = currentUrl.toString();
+    }
+</script>
 <table class="table">
     <thead> 
         <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Brand</th>
-            <th>Category</th>
-            <th>Price</th>
+            <th style="cursor:pointer" onclick="sortTable('Id')">ID</th>
+            <th style="cursor:pointer" onclick="sortTable('Name')">Name</th>
+            <th style="cursor:pointer" onclick="sortTable('Brand')">Brand</th>
+            <th style="cursor:pointer" onclick="sortTable('Category')">Category</th>
+            <th style="cursor:pointer" onclick="sortTable('Price')">Price</th>
             <th>Image</th>
-            <th>CreatedAt</th>
+            <th style="cursor:pointer" onclick="sortTable('CreatedAt')">CreatedAt</th>
             <th>Action</th>
 
         </tr>
@@ -47,3 +71,17 @@
         }
     </tbody>
 </table>
+
+<nav >
+    <ul class="pagination">
+       @for (int i = 1; i <= totalPages; i++)
+        {
+            string active="";
+            if (i == pageIndex) active = "active";
+
+            <li class="page-item @active"><a class="page-link" asp-route-pageIndex="@i" asp-route-search="@search"
+                    asp-route-colimn="@coulmn" asp-route-orderBy="@orderBy">@i</a></li>
+
+        }
+    </ul>
+</nav>

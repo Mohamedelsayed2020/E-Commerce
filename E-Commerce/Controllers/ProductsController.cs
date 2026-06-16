@@ -1,6 +1,8 @@
 ﻿using E_Commerce.Models;
 using E_Commerce.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.Linq;
 
 namespace E_Commerce.Controllers
 {
@@ -8,15 +10,115 @@ namespace E_Commerce.Controllers
     {
         private readonly ApplicarionDbContext context;
         private readonly IWebHostEnvironment environment;
+        private readonly int pageSize = 5;
 
         public ProductsController(ApplicarionDbContext context, IWebHostEnvironment environment)
         {
             this.context = context;
             this.environment = environment;
         }
-        public IActionResult Index()
+        public IActionResult Index(int pageIndex, string? search, string? coulmn, string? orderBy)
         {
-            var products = context.Products.OrderByDescending(p => p.Id).ToList();
+            IQueryable<Product> query = context.Products;
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(p => p.Name.Contains(search) || p.Brand.Contains(search) || p.Category.Contains(search));
+            }
+            string[] validCoulmn = { "Id", "Name", "Brand", "Category", "Price", "CreatedAt" };
+            string[] validOrderBy = { "asc", "desc" };
+            if (!validCoulmn.Contains(coulmn))
+            {
+                coulmn = "Id";
+            }
+            if (!validOrderBy.Contains(orderBy))
+            {
+                orderBy = "desc";
+            }
+
+            if (coulmn == "Name")
+            {
+                if (orderBy == "asc")
+                {
+                    query = query.OrderBy(p => p.Name);
+
+                }
+                else
+                {
+                    query = query.OrderByDescending(p => p.Name);
+                }
+            }
+
+            else if (coulmn == "Brand")
+            {
+                if (orderBy == "asc")
+                {
+                    query = query.OrderBy(p => p.Brand);
+
+                }
+                else
+                {
+                    query = query.OrderByDescending(p => p.Brand);
+                }
+            }
+            else if (coulmn == "Category")
+            {
+                if (orderBy == "asc")
+                {
+                    query = query.OrderBy(p => p.Category);
+                }
+                else
+                {
+                    query = query.OrderByDescending(p => p.Category);
+                }
+            }
+            else if (coulmn == "Price")
+            {
+                if (orderBy == "asc")
+                {
+                    query = query.OrderBy(p => p.Price);
+                }
+                else
+                {
+                    query = query.OrderByDescending(p => p.Price);
+                }
+            }
+            else if (coulmn == "CreatedAt")
+            {
+                if (orderBy == "asc")
+                {
+                    query = query.OrderBy(p => p.CreatedAt);
+                }
+                else
+                {
+                    query = query.OrderByDescending(p => p.CreatedAt);
+                }
+            }
+            else
+            {
+                if (orderBy == "asc")
+                {
+                    query = query.OrderBy(p => p.Id);
+                }
+                else
+                {
+                    query = query.OrderByDescending(p => p.Id);
+                }
+            }
+            //query = query.OrderByDescending(p => p.Id);
+            // pagination
+            if (pageIndex < 1)
+            {
+                pageIndex = 1;
+            }
+            decimal count = query.Count();
+            int totalPages = (int)Math.Ceiling(count / pageSize);
+            query = query.Skip((pageIndex - 1) * pageSize).Take(pageSize);
+            var products = query.ToList();
+            ViewData["PageIndex"] = pageIndex;
+            ViewData["TotalPages"] = totalPages;
+            ViewData["Search"] = search;
+            ViewData["Coulmn"] = coulmn;
+            ViewData["OrderBy"] = orderBy;
             return View(products);
         }
 
@@ -172,6 +274,6 @@ namespace E_Commerce.Controllers
         }
 
 
-        }
+    }
 
 }
