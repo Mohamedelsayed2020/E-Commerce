@@ -1,0 +1,22 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace E_Commerce.Models
+{
+    public class RegisterDto
+    {
+        [Required(ErrorMessage ="First Name is Requried"),MaxLength(100)]
+        public string FirstName { get; set; } = "";
+        [Required(ErrorMessage = "Last Name is Requried"), MaxLength(100)]
+        public string LastName { get; set; } = "";
+        [Required, MaxLength(100), EmailAddress]
+        public string Email { get; set; } = "";
+        [Phone(ErrorMessage ="format is not valid"),MaxLength(20)]
+        public string? PhoneNumber { get; set; }
+        [Required,MaxLength(200)]
+        public string Address { get; set; } = "";
+        [Required,MaxLength(100)]
+        public string Password { get; set; } = "";
+        [Required(ErrorMessage ="confirme password is required"),MaxLength(100),Compare("Password",ErrorMessage ="Password and Confirm Password must be same")]
+        public string ConfirmPassword { get; set; } = "";
+    }
+}
