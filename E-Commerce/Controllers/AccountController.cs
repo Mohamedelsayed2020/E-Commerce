@@ -239,7 +239,8 @@ namespace E_Commerce.Controllers
                 string senderEmail = configuration["BrevoSettings:SenderEmail"] ?? "";
                 string userName = user.FirstNme + " " + user.LastName;
                 string subject = "Password Reset Request";
-                string message = $"Hello {userName},\n\nYou have requested to reset your password. Please click the link below to reset your password:\n\n{resetLink}\n\nIf you did not request this, please ignore this email.\n\nBest regards,\n{senderName}";
+                string message = "Hello "+ userName +",\n\n" +"You have requested to reset your password. Please click the link below to reset your password:\n\n" +resetLink +"\n\n"+ "Best regards";
+
 
                 EmailSender.SendEmail(senderName, senderEmail, userName, email, subject, message);
 
@@ -248,6 +249,55 @@ namespace E_Commerce.Controllers
 
 
             return View();
+        }
+
+        public IActionResult ResetPassword(string? token)
+        {
+            if (signInManager.IsSignedIn(User))
+            {
+                return RedirectToAction("Index", "Home");
+            }
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Index", "Home");
+
+            }
+
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ResetPassword(ResetPasswordDto resetPasswordDto, string? token)
+        {
+            if (signInManager.IsSignedIn(User))
+            {
+                return RedirectToAction("Index", "Home");
+            }
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Index", "Home");
+            }
+            if (!ModelState.IsValid)
+            {
+                return View(resetPasswordDto);
+            }
+            var user = await userManager.FindByEmailAsync(resetPasswordDto.Email);
+            if (user == null)
+            {
+                ViewBag.ErrorMessage = "Invalid email address.";
+                return View(resetPasswordDto);
+            }
+            var result = await userManager.ResetPasswordAsync(user, token, resetPasswordDto.Password);
+            if (result.Succeeded)
+            {
+                ViewBag.SuccessMessage = "Password reset successfully. You can now log in with your new password.";
+                return View();
+            }
+            else
+            {
+                ViewBag.ErrorMessage = "Error: " + result.Errors.First().Description;
+                return View(resetPasswordDto);
+            }
         }
     }
 }
