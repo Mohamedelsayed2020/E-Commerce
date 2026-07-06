@@ -2,25 +2,131 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Threading.Tasks;
 
 namespace E_Commerce.Controllers
 {
-    [Authorize(Roles ="admin")]
+    [Authorize(Roles = "admin")]
     [Route("/Admin/[controller]/{action}/{id?}")]
     public class UsersController : Controller
     {
         private readonly UserManager<ApplicationUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
-
-        public UsersController(UserManager<ApplicationUser> userManager,RoleManager<IdentityRole> roleManager )
+        private readonly int pageSize = 5;
+        public UsersController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             this.userManager = userManager;
             this.roleManager = roleManager;
         }
-        public IActionResult Index()
+        public IActionResult Index(int? pageIndex)
         {
-            var users = userManager.Users.OrderByDescending(u=>u.CreatedAt).ToList();
+            IQueryable<ApplicationUser> query = userManager.Users.OrderByDescending(u => u.CreatedAt);
+            // pagenation functionality
+            if (pageIndex == null || pageIndex < 1)
+            {
+                pageIndex = 1;
+            }
+            decimal count = query.Count();
+            int totalPages = (int)Math.Ceiling(count / pageSize);
+            query = query.Skip(((int)pageIndex - 1) * pageSize).Take(pageSize);
+
+            var users = query.ToList();
+            ViewBag.PageIndex = pageIndex;
+            ViewBag.TotalPages = totalPages;
             return View(users);
+        }
+
+        public async Task<IActionResult> Details(string? id)
+        {
+            if (id == null)
+            {
+                return RedirectToAction("Index", "Users");
+            }
+            var appUser = await userManager.FindByIdAsync(id);
+            if (appUser == null)
+            {
+
+                return RedirectToAction("Index", "Users");
+            }
+            ViewBag.Roles = await userManager.GetRolesAsync(appUser);
+
+            // get available roles for the user
+            var availableRoles = roleManager.Roles.ToList();
+            var items = new List<SelectListItem>();
+            foreach (var role in availableRoles)
+            {
+                items.Add(new SelectListItem
+                {
+                    Text = role.NormalizedName,
+                    Value = role.Name,
+                    Selected = await userManager.IsInRoleAsync(appUser, role.Name!),
+                });
+            }
+            ViewBag.SelectItems = items;
+            return View(appUser);
+        }
+
+        public async Task<IActionResult> EditRole(string? id, string? newRole)
+        {
+            if (id == null || newRole == null)
+            {
+                return RedirectToAction("Index", "Users");
+            }
+            var roleExists = await roleManager.RoleExistsAsync(newRole);
+            var appUser = await userManager.FindByIdAsync(id);
+            if (appUser == null || !roleExists)
+            {
+                return RedirectToAction("Index", "Users");
+
+            }
+            var currentUser = await userManager.GetUserAsync(User);
+            if (currentUser!.Id == appUser.Id)
+            {
+                TempData["ErrorMessage"] = "You cannot change your own role.";
+                return RedirectToAction("Details", "Users", new { id });
+            }
+            var userRoles = await userManager.GetRolesAsync(appUser);
+            await userManager.RemoveFromRolesAsync(appUser, userRoles);
+            await userManager.AddToRoleAsync(appUser, newRole);
+            TempData["SuccessMessage"] = "User role updated successfully.";
+            return RedirectToAction("Details", "Users", new { id });
+
+        }
+        public async Task<IActionResult> DeleteAccount(string? id)
+        {
+            if (id == null)
+            {
+                return RedirectToAction("Index", "Users");
+
+            }
+            var appUser = await userManager.FindByIdAsync(id);
+            if (appUser == null)
+            {
+                return RedirectToAction("Index", "Users");
+
+            }
+            var currentUser = await userManager.GetUserAsync(User);
+            if (currentUser!.Id == appUser.Id)
+            {
+                TempData["ErrorMessage"] = "You cannot change your own role.";
+                return RedirectToAction("Details", "Users", new { id });
+            }
+
+            // delete the user account
+            var result = await userManager.DeleteAsync(appUser);
+            if (result.Succeeded)
+            {
+                TempData["SuccessMessage"] = "User account deleted successfully.";
+                return RedirectToAction("Index", "Users");
+
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Failed to delete user account."+ result.Errors.First().Description;
+                return RedirectToAction("Details", "Users", new { id });
+
+            }
         }
     }
 }
