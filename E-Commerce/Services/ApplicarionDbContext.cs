@@ -12,6 +12,7 @@ namespace E_Commerce.Services
         }
 
         public DbSet<Models.Product> Products { get; set; }
+        public DbSet<Order> Orders { get; set; }
 
     }
 }
