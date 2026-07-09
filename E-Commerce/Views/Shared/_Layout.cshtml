@@ -11,6 +11,164 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 </head>
 <body>
+
+    <script>
+        // Get shopping cart from cookie
+        function getShoppingCart() {
+            try {
+                const cookieName = "shopping_cart=";
+                const cookies = document.cookie.split(';');
+
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.startsWith(cookieName)) {
+                        const cartStr = cookie.substring(cookieName.length);
+                        const decodedStr = decodeURIComponent(cartStr);
+                        const cart = JSON.parse(decodedStr);
+                        return cart;
+                    }
+                }
+            } catch (e) {
+                console.error("Error reading cart cookie:", e);
+            }
+            return {};
+        }
+
+        // Save shopping cart to cookie
+        function saveCart(cart) {
+            try {
+                const cartStr = JSON.stringify(cart);
+                const encodedStr = encodeURIComponent(cartStr);
+
+                const date = new Date();
+                date.setDate(date.getDate() + 365);
+
+                document.cookie = `shopping_cart=${encodedStr};expires=${date.toUTCString()};path=/`;
+                console.log("Cart saved:", cart);
+            } catch (e) {
+                console.error("Error saving cart:", e);
+            }
+        }
+
+        // Update cart badge display
+        function updateCartDisplay() {
+            const cart = getShoppingCart();
+            let totalItems = 0;
+
+            for (const [productId, quantity] of Object.entries(cart)) {
+                const qty = parseInt(quantity) || 0;
+                totalItems += qty;
+            }
+
+            const badge = document.getElementById("CartSize");
+            if (badge) {
+                badge.textContent = totalItems;
+            }
+
+            console.log("Cart updated. Total items:", totalItems);
+        }
+
+        // Add item to cart
+        function addToCart(button, id) {
+            console.log("Adding product ID:", id);
+
+            // Get current cart
+            const cart = getShoppingCart();
+
+            // Get current quantity for this product
+            let quantity = parseInt(cart[id]) || 0;
+
+            // Increment quantity
+            quantity++;
+            cart[id] = quantity;
+
+            // Save updated cart
+            saveCart(cart);
+
+            // Update button state
+            button.textContent = "Added";
+            button.disabled = true;
+
+            // Reset button after 2 seconds
+            setTimeout(() => {
+                button.textContent = "Add to Cart";
+                button.disabled = false;
+            }, 2000);
+
+            // Update cart display
+            updateCartDisplay();
+        }
+
+        // Initialize cart on page load
+        document.addEventListener("DOMContentLoaded", function() {
+            console.log("Page loaded - initializing cart");
+            updateCartDisplay();
+        });
+
+    </script>
+
+
+@* 
+    <script>
+
+        function getShoppingCart(){
+            const cookieName="shopping_cart";
+            let cookiesArray=document.cookie.split(';');
+            for(let i=0;i<cookiesArray.length;i++)
+            {
+                let cookie = cookiesArray[i];
+                if(cookie.includes(cookieName)){
+                    let cookie_value=cookie.substring(cookie.indexOf("=") + 1 );
+                    try{
+                        let cart= JSON.parse(cookie_value);
+                        console.log(cart);
+                        return cart;
+                    }
+                    catch(Exception){
+                        break;
+                    }
+                }
+            }
+            return {};
+        }
+
+        function saveCart(cart){
+            let cartStr=JSON.stringify(cart);
+            console.log("cart str = "+cartStr);
+            let d = new Date();
+            d.setDate(d.getDate()+365);
+            let expires=d.toUTCString();
+            document.cookie="shopping_cart="+cartStr+";expires="+expires+";path=/; SameSite=Strict; Secure"
+        }
+
+        function addToCart(button,id){
+
+        let cart=getShoppingCart();
+            let quantity=cart[id];
+            if(isNaN(quantity)){
+                cart[id]=1
+            }else{
+                cart[id]=Number(quantity)+1;
+            }
+            console.log("cart is = ", cart);
+            saveCart(cart);
+            button.innerHtml="Added";
+            button.disabled=true;
+            console.log("cart after save  = ", cart);
+            console.log("button "+ button.innerHtml);
+            let cartSize=0;
+            for(var cartItem of Object.entries(cart)){
+                quantity = cartItem[1];
+                if(isNaN(quantity)) continue;
+                cartSize += Number(quantity);
+            }
+
+            document.getElementById("CartSize").innerHTML= cartSize
+                                    console.log("after  "+cartSize);
+
+        }
+    </script> *@
+
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow">
             <div class="container">
@@ -35,6 +193,16 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
+                    </ul>
+                    <ul class="navbar-nav">
+
+                        <li class="nav-item me-2">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Cart" asp-action="Index">
+                                <i class="bi bi-cart4 text-danger h3"></i>
+                                <span id="CartSize" class="badge text-bg-danger" style="vertical-align:top">0</span>
+                            </a>
+                        </li>
+
                     </ul>
 
                     @using Microsoft.AspNetCore.Identity
