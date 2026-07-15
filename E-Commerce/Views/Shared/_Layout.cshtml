@@ -195,11 +195,15 @@
                         </li>
                     </ul>
                     <ul class="navbar-nav">
+                        @using E_Commerce.Services
 
                         <li class="nav-item me-2">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Cart" asp-action="Index">
                                 <i class="bi bi-cart4 text-danger h3"></i>
-                                <span id="CartSize" class="badge text-bg-danger" style="vertical-align:top">0</span>
+                                <span id="CartSize" class="badge text-bg-danger" style="vertical-align:top">
+                                    @CartHelper.GetCartSize(Context.Request,Context.Response);
+
+                                </span>
                             </a>
                         </li>
 
